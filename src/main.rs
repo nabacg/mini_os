@@ -24,9 +24,6 @@ fn panic(info: &PanicInfo) -> ! {
     mini_os::test_panic_handler(info)
 }
 
-static HELLO: &[u8] = b"mini_os: Hello World!";
-static BLANK: &[u8] = b"! ";
-
 #[no_mangle] // prevent mangling function names
 pub extern "C" fn _start() -> ! {
     // `0xb8000` is the address of the VGA buffer
