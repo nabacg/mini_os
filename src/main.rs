@@ -29,14 +29,16 @@ fn panic(info: &PanicInfo) -> ! {
 pub extern "C" fn _start() -> ! {
     // `0xb8000` is the address of the VGA buffer
 
-    println!("Hello {}!", 1000);
+    println!("mini_os: Hello {}!", 1000);
 
     mini_os::init();
 
     #[cfg(test)]
     test_main();
 
-    println!("But plucky mini_OS didn't crash!");
+    use x86_64::registers::control::Cr3;
+    let (level_4_page_table, _) = Cr3::read();
+    println!("Level 4 page table at: {:?}", level_4_page_table.start_address());
 
     mini_os::hlt_loop();
 }
