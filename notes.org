@@ -1,0 +1,22 @@
+* Tests
+** TODO connect module tests with main test, currently only test from main.rs are run on `cargo run`. Integration tests also never run :|
+** to run lib.rs and all module tests run `cargo run --lib`
+
+
+* pointers
+
+** Triggering a segfault
+#+begin_src rust
+
+    //triggering a page fault
+    unsafe {
+        *(0xdeadbeef as *mut u64) = 42;
+    }
+#+end_src
+
+* x86_64 crate
+
+** triggering int3 (breakpoint interrupt)
+   #+begin_src rust
+   x86_64::instructions::interrupts::int3();
+   #+end_src
