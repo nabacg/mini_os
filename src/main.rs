@@ -16,7 +16,7 @@ fn panic(info: &PanicInfo) -> ! {
     // i.e. it will never return
 
     println!("{}", info);
-    loop {}
+    mini_os::hlt_loop();
 }
 
 #[cfg(test)]
@@ -38,7 +38,7 @@ pub extern "C" fn _start() -> ! {
 
     println!("But plucky mini_OS didn't crash!");
 
-    loop {}
+    mini_os::hlt_loop();
 }
 
 #[test_case]
