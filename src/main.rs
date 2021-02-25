@@ -11,7 +11,8 @@ use mini_os::println;
 #[cfg(not(test))]
 #[panic_handler]
 fn panic(info: &PanicInfo) -> ! {
-    // ! return type here marks panic as diverging function https://doc.rust-lang.org/1.30.0/book/first-edition/functions.html#diverging-functions
+    // ! return type here marks panic as diverging function
+    // https://doc.rust-lang.org/1.30.0/book/first-edition/functions.html#diverging-functions
     // i.e. it will never return
 
     println!("{}", info);
@@ -30,8 +31,12 @@ pub extern "C" fn _start() -> ! {
 
     println!("Hello {}!", 1000);
 
+    mini_os::init();
+
     #[cfg(test)]
     test_main();
+
+    println!("But plucky mini_OS didn't crash!");
 
     loop {}
 }
