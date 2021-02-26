@@ -5,6 +5,8 @@
 
 * pointers
 
+** recursive Page table address translation
+https://os.phil-opp.com/paging-implementation/#recursive-page-tables
 ** Triggering a segfault
 #+begin_src rust
 
@@ -19,4 +21,29 @@
 ** triggering int3 (breakpoint interrupt)
    #+begin_src rust
    x86_64::instructions::interrupts::int3();
+   #+end_src
+
+
+** Multilevel Page Table traversal
+   #+begin_src rust
+    let l4_table = unsafe { active_level_4_table(phys_mem_offset) };
+
+    for (i, pte) in l4_table.iter().enumerate() {
+        if !pte.is_unused() {
+            println!("L4 PageTableEntry {}:{:?}", i, pte);
+
+            //get physical address from the PTE and convert it
+            let phys = pte.frame().unwrap().start_address();
+            let virt = phys.as_u64() + boot_info.physical_memory_offset;
+            let ptr  = VirtAddr::new(virt).as_mut_ptr();
+            let l3_table: &PageTable = unsafe { &*ptr };
+
+            for (i, pte) in l3_table.iter().enumerate() {
+                if !pte.is_unused() {
+                    println!("L3 PageTableEntry {}:{:?}", i, pte);
+                }
+            }
+
+        }
+    }
    #+end_src
