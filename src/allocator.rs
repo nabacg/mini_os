@@ -3,6 +3,7 @@ use core::ptr::null_mut;
 use linked_list_allocator::LockedHeap;
 
 pub mod bump;
+pub mod linked_list;
 // happens to be a Zero Sized Type https://doc.rust-lang.org/nomicon/exotic-sizes.html#zero-sized-types-zsts
 pub struct Dummy;
 
@@ -17,10 +18,11 @@ unsafe impl GlobalAlloc for Dummy {
     }
 }
 
-use bump::BumpAllocator;
-
+// use bump::BumpAllocator;
+use linked_list::LinkedListAllocator;
 #[global_allocator]
-static ALLOCATOR: Locked<BumpAllocator> = Locked::new(BumpAllocator::new());
+static ALLOCATOR: Locked<LinkedListAllocator> = Locked::new(LinkedListAllocator::new());
+// static ALLOCATOR: Locked<BumpAllocator> = Locked::new(BumpAllocator::new());
 // static ALLOCATOR: LockedHeap = LockedHeap::empty();
 
 pub const HEAP_START: usize = 0x_4444_4444_0000;

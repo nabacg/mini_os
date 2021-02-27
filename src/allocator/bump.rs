@@ -57,6 +57,10 @@ unsafe impl GlobalAlloc for Locked<BumpAllocator> {
     unsafe fn dealloc(&self, ptr: *mut u8, layout: Layout) {
         let mut balloc = self.lock();
         balloc.allocations -= 1;
+        if balloc.next ==  (ptr as usize) + layout.size() {
+            balloc.next -= (ptr as usize) - layout.size();
+        }
+
         if balloc.allocations == 0 {
             balloc.next = balloc.heap_start;
         };
