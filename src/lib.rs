@@ -1,3 +1,4 @@
+#![feature(alloc_error_handler)]
 #![no_std]
 #![cfg_attr(test, no_main)]
 #![feature(custom_test_frameworks)]
@@ -13,6 +14,8 @@ pub mod interrupts;
 pub mod serial;
 pub mod vga_buffer;
 pub mod memory;
+pub mod allocator;
+extern crate alloc;
 
 pub trait Testable {
     fn run(&self) -> ();
@@ -96,4 +99,12 @@ pub fn hlt_loop() -> ! {
         // doing this to avoid endless spinning
         x86_64::instructions::hlt();
     }
+}
+
+
+
+
+#[alloc_error_handler]
+fn alloc_error_handler(layout: alloc::alloc::Layout) -> ! {
+    panic!("Allocation error: {:?}", layout)
 }
