@@ -17,8 +17,11 @@ unsafe impl GlobalAlloc for Dummy {
     }
 }
 
+use bump::BumpAllocator;
+
 #[global_allocator]
-static ALLOCATOR: LockedHeap = LockedHeap::empty();
+static ALLOCATOR: Locked<BumpAllocator> = Locked::new(BumpAllocator::new());
+// static ALLOCATOR: LockedHeap = LockedHeap::empty();
 
 pub const HEAP_START: usize = 0x_4444_4444_0000;
 pub const HEAP_SIZE: usize = 100 * 1024; // 100 Kb
@@ -57,4 +60,35 @@ pub fn init_heap(
     }
 
     Ok(())
+}
+
+
+
+// a wrapper around spin::Mutex because Rust doesn't allow implementing traites for types defined in other crates
+pub struct Locked<A> {
+    inner: spin::Mutex<A>,
+}
+
+impl<A> Locked<A> {
+    pub const fn new(inner: A) -> Self {
+        Locked {
+            inner: spin::Mutex::new(inner),
+        }
+    }
+
+    pub fn lock(&self) -> spin::MutexGuard<A> {
+        self.inner.lock()
+    }
+}
+
+
+fn align_up(addr: usize, align: usize) -> usize {
+    // let reminder = addr % align;
+    // if reminder == 0 {
+    //     addr
+    // } else {
+    //     addr - reminder + align // if addr:97, align:10 => 97 - 7 + 10 => 100
+    // }
+    // apparently below does the same job as above, just faster
+    (addr + align - 1) & !(align - 1)
 }
