@@ -2,8 +2,10 @@ use alloc::alloc::{GlobalAlloc, Layout};
 use core::ptr::null_mut;
 use linked_list_allocator::LockedHeap;
 
+pub mod bump;
 // happens to be a Zero Sized Type https://doc.rust-lang.org/nomicon/exotic-sizes.html#zero-sized-types-zsts
 pub struct Dummy;
+
 
 unsafe impl GlobalAlloc for Dummy {
     unsafe fn alloc(&self, _layout: Layout) -> *mut u8 {
