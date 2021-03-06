@@ -104,8 +104,9 @@ impl Writer {
             match byte {
                 //if belongs in range of printable 'ASCII' byte or newline
                 0x20..=0x7e | b'\n' => self.write_byte(byte),
-                _ => self.write_byte(0xfe), //For unprintable bytes, we print a ■ character, which has the hex code 0xfe on the VGA hardware.
-                                            // more details on this https://en.wikipedia.org/wiki/Code_page_437
+                _ => self.write_byte(0xfe),
+                //For unprintable bytes, we print a ■ character, which has the hex code 0xfe on the VGA hardware.
+                // more details on this https://en.wikipedia.org/wiki/Code_page_437
             }
         }
     }
