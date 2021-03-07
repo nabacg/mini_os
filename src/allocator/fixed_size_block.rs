@@ -13,10 +13,11 @@ struct ListNode {
 // this simplifies things
 // also, don't define any block sizes smaller than 8 because each block must be capable of storing a 64-bit pointer to the next block when freed!
 const BLOCK_SIZES:  &[usize] = &[8, 16,  32, 64, 128, 256, 512, 1024, 2048];
-
+const MAX_BLOCKS_PER_SIZE: usize = 128;
 
 pub struct FixedSizeBlockAllocator {
     list_heads: [Option<&'static mut ListNode>; BLOCK_SIZES.len()],
+    list_sizes: [usize; BLOCK_SIZES.len()],
     fallback_allocator: linked_list_allocator::Heap,
     //fallback_allocator: LinkedListAllocator, // for when Free block merging is ready
 }
@@ -27,6 +28,7 @@ impl FixedSizeBlockAllocator {
         const EMPTY: Option<&'static mut ListNode> = None;
         FixedSizeBlockAllocator {
             list_heads: [EMPTY; BLOCK_SIZES.len()], // list of Nones for heads ;)
+            list_sizes: [0; BLOCK_SIZES.len()],
             fallback_allocator: linked_list_allocator::Heap::empty(),
         }
     }
@@ -86,18 +88,35 @@ unsafe impl GlobalAlloc for Locked<FixedSizeBlockAllocator> {
         let mut allocator = self.lock();
         match list_index(&layout) {
             Some(head_index) => {
-                let new_node = ListNode {
-                    next: allocator.list_heads[head_index].take(), // pointer magic, we're making a new node and point it at current head. Essentially push new_node to head of the list
-                };
-                //verify that block has the right size and alignment
-                assert!(mem::size_of::<ListNode>() <= BLOCK_SIZES[head_index]);
-                assert!(mem::align_of::<ListNode>() <= BLOCK_SIZES[head_index]); // this is where we need sizes to be power of 2 for alignment which has to be power of 2
-                let new_node_ptr = ptr as *mut ListNode;
-                new_node_ptr.write(new_node);
-                allocator.list_heads[head_index] = Some(&mut *new_node_ptr); // write new node as head
+                let list_size = allocator.list_sizes[head_index];
+                // if list_size is still under MAX_BLOCK_PER_SIZE
+                if list_size < MAX_BLOCKS_PER_SIZE  {
+                    let new_node = ListNode {
+                        // pointer magic, we're making a new node and point it at current head.
+                        // Essentially push new_node to head of the list
+                        next: allocator.list_heads[head_index].take(),
+                    };
+                    //verify that block has the right size and alignment
+                    assert!(mem::size_of::<ListNode>() <= BLOCK_SIZES[head_index]);
+                    // this is where we need sizes to be power of 2 for alignment which has to be power of 2
+                    assert!(mem::align_of::<ListNode>() <= BLOCK_SIZES[head_index]);
+                    let new_node_ptr = ptr as *mut ListNode;
+                    new_node_ptr.write(new_node);
+                    // this is actually where list_head is populated.
+                    // 1. It starts empty,
+                    // 2. initial calls to alloc for given size use fallback_allocator
+                    // 3. when blocks from fallback_allocator get dealloc'ed they get added to list_heads by the line below
+                    allocator.list_heads[head_index] = Some(&mut *new_node_ptr); // write new node as head of this list_heads
+                    // add list_size for head_index
+                    allocator.list_sizes[head_index] += 1;
+                } else {
+                    // otherwise stop adding to list and deallocate this block
+                    let ptr = NonNull::new(ptr).unwrap();
+                    allocator.fallback_allocator.deallocate(ptr, layout);
+                }
             },
             None => {
-                let ptr = NonNull::new(ptr).unwrap();
+                let ptr = NonNull::new(ptr).unwrap(); // need to wrap the pointer in NonNull, it's what linked_list_allocator lib requires
                 allocator.fallback_allocator.deallocate(ptr, layout);
             }
         }
