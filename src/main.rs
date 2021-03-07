@@ -56,11 +56,14 @@ fn kernel_main(boot_info: &'static BootInfo) -> ! {
     let x = Box::new(32);
     println!("heap_value at {:p}", x); // {:p} pointer formatting https://doc.rust-lang.org/core/fmt/trait.Pointer.html
 
-    let mut vec:Vec<u32> = Vec::new();
-    for i in 0..500 {
-        vec.push(i);
+    for j in 0..100 {
+        println!("run {}", j);
+        let mut vec:Vec<u32> = Vec::new();
+        for i in 0..500 {
+            vec.push(i);
+        }
+        println!("vec at {:p}", vec.as_slice());
     }
-    println!("vec at {:p}", vec.as_slice());
 
     let reference_counted = Rc::new(vec![1,2,3]);
     let cloned_reference = reference_counted.clone();
